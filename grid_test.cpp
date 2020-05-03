@@ -185,7 +185,7 @@ class MG{
             Nlevel = l;
             ptrgrids = new Grid*[l]; //array of ptrs
 
-            for (unsigned int i =0; i<l; i+=1){
+            for (unsigned int i =0; i<l; i++){
                 unsigned int number = pow(2, i+1)+1; 
                 ptrgrids[i] = new Grid{number}; // dynamically allocated grid size to memory
             }
@@ -197,6 +197,8 @@ class MG{
 
             delete ptrgrids[i]; 
 
+            delete [] ptrgrids;
+
             // delete grids first.
         }
 
@@ -204,6 +206,9 @@ class MG{
 
 
          void print_grid(unsigned int i){
+
+
+             //boundcheck
 
 
              //double value1 = 2.0;
@@ -214,13 +219,16 @@ class MG{
          }
 
         // Get ith grid from the Grid pointer array
-         Grid* get_grid(unsigned i){
+         Grid* get_grid(unsigned i) {
+
+             //const ptr/variable
+
 
              return ptrgrids[i];
          }
 
 
-         auto restriction(const Grid &gridabove){
+         Grid restriction(const Grid &gridabove){
 
 
              // Get the size of current grid
@@ -348,7 +356,7 @@ class MG{
 
 
                 gridbelow.set_approx(new_values, i);
-                gridbelow.set_rhs(new_rhs, i);
+                //gridbelow.set_rhs(new_rhs, i);
 
                 }
 
@@ -395,7 +403,7 @@ int main(){
 
     Vcycle.print_grid(0);
 
-    Grid* grid2 = Vcycle.get_grid(1);
+    Grid* grid2 = Vcycle.get_grid(2);
 
     std::cout<<"The size of grid"<<"\n";
 
