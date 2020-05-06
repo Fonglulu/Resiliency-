@@ -101,11 +101,11 @@ class Grid{
             //std::vector<std::pair<double, double>> nodes = rgrid.values;
 
             // reference to the nodes
-            const std::vector<std::pair<double, double>> &ref2{values};
+            const std::vector<std::pair<double, double>> &ref{values};
             
 
             // Get ith element
-            std::pair<double, double> node_i = ref2[i];
+            std::pair<double, double> node_i = ref[i];
 
             return node_i;
 
@@ -115,6 +115,28 @@ class Grid{
 
 
         }  
+
+
+
+        double get_approx(const unsigned int i)const{
+
+            const std::vector<std::pair<double, double>> &ref{values};
+
+            std::pair<double, double> node_i = ref[i];
+
+            return node_i.first;
+
+        }
+
+        double get_rhs(const unsigned int i)const{
+
+            const std::vector<std::pair<double, double>> &ref{values};
+
+            std::pair<double, double> node_i = ref[i];
+
+            return node_i.second;
+
+        }
 
         unsigned int get_size() const {
 
@@ -132,6 +154,10 @@ class Grid{
 
         }
 
+        double get_h() const{
+            return spacing;
+        }
+
 
         // Set rhs to nodes
 
@@ -139,6 +165,7 @@ class Grid{
 
             values[i].second =rhs;
         }
+
 
         //friend class MG;
 
@@ -367,19 +394,205 @@ class MG{
             return gridbelow;
         }
 
+};
+
          
 
 
 
 
 
+class MG_solver{
+
+    private:
+        
+
+        unsigned int _N; // size per dim on finest 
+
+        unsigned int _totN; // #nodes on finest
+
+        unsigned int _Nlevel; // #levels 
+
+        unsigned int _Nmin; // size per dim on coarsest
+
+
+        // Data needed
+
+        MG _solutions;  //solution
+
+        // convergence criterion
+
+        double _stopping_criterion{1e-5};
+
+        //smoother parameter
+
+        unsigned int _sweeps_coarse{2};
+
+        unsigned int _sweeps_finest{2};
+
+        unsigned int _max_Vcycle{10};
+
+        //Book-keeping variables
+
+
+        unsigned int _current_Vcycle;
+
+        // Internal methods
+
+        void _Gauss_Seidel(Grid& grid){
+
+            unsigned int xdim{grid.get_size()};
+
+            double h{grid.get_h};
+
+            for (int i = 0; i< xdim; i++){
+
+                for (int j = 0; j<xdim; j++){
+
+                    unsigned int index = grid.vector_index(i,j);
+
+                    if (grid.boundary(index) == false){
+
+                        unsigned int index_up = grid.vector_index(i,j+1);
+
+                        unsigned int index_down = grid.vector_index(i,j-1);
+
+                        unsigned int index_right = grid.vector_index(i+1,j);
+
+                        unsigned int index_left = grid.vector_index(i-1, j);
+
+                        double new_approx{(grid.get_approx(index_up)+grid.get_approx(index_down)+grid.get_approx(index_left)\
+                                         +grid.get_approx(index_right)+h*h*grid.get_rhs(index))/int{4}};
+
+
+                        grid.set_approx(new_approx, index);
+
+
+                    }
+                }
+
+
+            }
+
+
+
+        }// End of _Gauss_Seidel
+
+
+        void _calculate_res(Grid& grid){
+
+            unsigned int xdim{grid.get_size()};
+
+            double h{grid.get_h};
+
+            for (int i = 0; i< xdim; i++){
+
+                for (int j = 0; j<xdim; j++){
+
+                    unsigned int index = grid.vector_index(i,j);
+
+                    if (grid.boundary(index) == false){
+
+
+                        unsigned int index_up = grid.vector_index(i,j+1);
+
+                        unsigned int index_down = grid.vector_index(i,j-1);
+
+                        unsigned int index_right = grid.vector_index(i+1,j);
+
+                        unsigned int index_left = grid.vector_index(i-1, j);
+
+                        double new_res{grid.get_rhs(index) + (grid.get_approx(index_down) +grid.get_approx(index_up)\
+                                      +grid.get_approx(index_left) + grid.get_approx(index_right) - 4*grid.get_approx(index))\
+                                      /double(h*h)};
+
+                        grid.set_rhs(new_res, index);
+
+                       }
+
+                }
+            }
+
+        }
+
+        void _solve_current_grid(unsigned int level){
+
+            _solutions.get_grid(level);
+
+
+
+        
+
+
+
+
+        }
+
+
+        void _recursive_go_down(unsigned int level){
+
+            _solutions.restriction(level, _solutions.get_grid(level+1)); //
+
+            _solve_current_grid(level+1)
 
 
 
 
 
 
+
+
+        }
+
+
+
+
+
+
+        public:
+
+        void solve(){
+
+             _current_Vcycle = 0;
+
+             _solve_current_grid(0);
+
+             _recursive_go_down(0);
+
+
+
+             
+
+
+
+        }
+
+
+
+
+
+        
+        
+        
+
+
+
+
+
+
+
+        
 };
+
+
+
+
+
+
+
+
+
+
 
 
 
