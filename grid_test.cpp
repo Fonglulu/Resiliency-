@@ -146,6 +146,26 @@ class Grid{
         return _N;
         }
 
+
+        double get_h() const{
+            return spacing;
+        }
+
+
+        double get_res(const unsigned int i) const{
+
+
+            const std::vector<double> &ref{residual};
+
+            double res_i = ref[i];
+
+            return res_i;
+
+            
+
+
+        }
+
         // Set values to nodes
 
         void set_approx( double& approx, const int & i){
@@ -153,10 +173,6 @@ class Grid{
             values[i].first = approx;
 
 
-        }
-
-        double get_h() const{
-            return spacing;
         }
 
 
@@ -260,7 +276,7 @@ class MG{
              return ptrgrids[i];
          }
 
-
+        // restriction on residuals
          void restriction(unsigned int level){
 
              // get current grid
@@ -276,7 +292,7 @@ class MG{
 
              unsigned int size_below{gridbelow -> get_size()};
 
-            for (int i = 0; i< size_below; i++){
+             for (int i = 0; i< size_below; i++){
 
                 for (int j = 0; j<size_below; j++){
 
@@ -307,10 +323,17 @@ class MG{
                     int upperright_above = gridabove->vector_index(2*i+1, 2*j+1);
 
 
-                    double approx_below = gridabove->get_approx(right_above);
+                    double residual_below = gridabove->get_res(index)+ 0.5*(gridabove->get_res(right_above)+gridabove->get_res(left_above)\
+                            +gridabove->get_res(upper_above) +gridabove->get_res(down_above)+)+0.25*(gridabove->get_res(upperleft_above)\
+                            +gridabove->get_res(upperright_above)+gridabove->get_res(downleft_above)+gridabove->get_res(downright_above));
 
 
+                    gridbelow->set_res(residual_below, gridbelow->vector_index(i,j));
 
+
+                    
+
+                    
 
 
 
@@ -606,11 +629,11 @@ class MG_solver{
 
         void _recursive_go_down(unsigned int level){
 
-            //calculate residual
+            //calculate new residual on grid below
 
-            /* _solutions.restriction(level, _solutions.get_grid(level+1)); //
+             _solutions.restriction(level, _solutions.get_grid(level+1)); // restriction on residual
 
-            _solve_current_grid(level+1)*/
+            _solve_current_grid(level+1)
 
             
 
