@@ -48,7 +48,7 @@ class Grid{
 
         // Convert vector index to grid index
 
-        std::pair<unsigned int, unsigned int> grid_index(const unsigned int i){
+        std::pair<unsigned int, unsigned int> grid_index(const unsigned int i) const{
             
 
             unsigned int ix{i/ _N};
@@ -191,7 +191,7 @@ class Grid{
 
         //friend class MG;
 
-        bool boundary(const unsigned int i){
+        bool boundary(const unsigned int i) const {
 
             if (grid_index(i).first == 0 ||  grid_index(i).first   == _N-1  || grid_index(i).second == 0 || grid_index(i).second == _N-1)
             {
@@ -331,164 +331,23 @@ class MG{
                     gridbelow->set_res(residual_below, gridbelow->vector_index(i,j));
 
 
-                    
-
-                    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-         }
-
-
-        //  Grid restriction(const Grid &gridabove){
-
-
-        //      // Get the size of current grid
-        //      unsigned int sizeuabove{gridabove.get_size()};
-
-        //      //std::cout<<sizeuabove<<"sizeuabove"<<'\n';
-
-        //      // Get the value of current grid
-        //      std::vector<std::pair<double, double>> valabove = gridabove.get_values();
-
-        //      // Initialise valbelow
-
-        //     unsigned int sizeubelow{(sizeuabove+1)/2};
-
-        //     Grid gridbelow{sizeubelow};
-
-        //     unsigned int totbelow = sizeubelow * sizeubelow;
-
-
-
-        //     //std::cout<<sizeubelow<<"sizeubelow"<<'\n';
-
-        //     //std::vector<std::pair<double, double>> ubelow{sizeubelow*sizeubelow, std::make_pair(0.0,0.0)};
-
-
-        //     for (int i=0; i<totbelow; i++)
-        //     {
-        //         if (gridbelow.boundary(i) == false)
-        //         {
-
-        //         std::cout<< i<<" i"<<"\n";
-        //         // Conver each node index in lower grid to a 2D grid index
-        //         std::pair<unsigned int, unsigned int>  ixiy_below{gridbelow.grid_index(i)};
-
-        //         // Find the (2x,2y) node index in upper grid
-        //         int centre_above = gridabove.vector_index(2* ixiy_below.first, 2* ixiy_below.second);
-
-        //         std::cout<< centre_above<<" centre"<<'\n';
+                }
                 
-        //         // Find the (2x-1, 2y) node index in upper grid
-        //         int right_above = gridabove.vector_index(2* ixiy_below.first-1, 2* ixiy_below.second);
+            }
+            
+        }// end of restriction
 
-        //         // Find the (2x+1, 2y) node index in upper grid
-        //         int left_above = gridabove.vector_index(2* ixiy_below.first+1, 2* ixiy_below.second);
 
-        //         // Find the (2x,2y-1) node index in upper grid
-        //         int down_above = gridabove.vector_index(2* ixiy_below.first,   2* ixiy_below.second-1);
+            void interpolation(unsigned int level){
 
-        //         // Find the (2x, 2y+1) node index in upper grid
-        //         int upper_above = gridabove.vector_index(2* ixiy_below.first,   2* ixiy_below.second+1);
-
-        //         // Find the (2x-1, 2y-1) node
-        //         int downleft_above = gridabove.vector_index(2*ixiy_below.first-1, 2*ixiy_below.second-1);
-                
-        //         // Find the (2x-1, 2y+1) node
-        //         int upperleft_above = gridabove.vector_index(2*ixiy_below.first-1, 2*ixiy_below.second+1);
-
-        //         // Find the (2x+1, 2y-1) node
-        //         int downright_above = gridabove.vector_index(2*ixiy_below.first+1, 2*ixiy_below.second-1);
-
-        //         // Find the (2x+1, 2y+1) node
-        //         int upperright_above = gridabove.vector_index(2*ixiy_below.first+1, 2*ixiy_below.second+1);
-
-        //         std::pair<double, double> centre = gridabove.get_node(centre_above);
-
-        //         centre.first=centre.first*1.0;
-
-        //         centre.second = centre.second*1.0;
-
-        //         std::pair<double, double> right = gridabove.get_node(right_above);
-
-        //         right.first = right.first*0.5;
-
-        //         right.second = right.second *0.5;
-
-        //         //std::cout<< node2.first<< "node.first"<<"\n";
-
-        //         std::pair<double, double> left = gridabove.get_node(left_above);
-
-        //         left.first = left.first*0.5;
-
-        //         left.second = left.second*0.5;
-
-        //         std::pair<double, double> down = gridabove.get_node(down_above);
-
-        //         down.first = down.first*0.5;
-
-        //         down.second = down.second*0.5;
-
-        //         std::pair<double, double> upper = gridabove.get_node(upper_above);
-
-        //         upper.first = upper.first*0.5;
-
-        //         upper.second = upper.second*0.5;
-
-        //         std::pair<double, double> downleft = gridabove.get_node(downleft_above);
-
-        //         downleft.first = downleft.first* 0.25;
-
-        //         downleft.second = downleft.second*0.25;
-
-        //         std::pair<double, double> upperleft = gridabove.get_node(upperleft_above);
-
-        //         upperleft.first = upperleft.first*0.25;
-
-        //         upperleft.second = upperleft.second*0.25;
-
-        //         std::pair<double, double> downright = gridabove.get_node(downright_above);
-
-        //         downright.first  = downright.first*0.25;
-
-        //         downright.second = downright.second*0.25;
-
-        //         std::pair<double, double> upperright = gridabove.get_node(upperright_above);
-
-        //         upperright.first = upperright.first *0.25;
-
-        //         upperright.second = upperright.second *0.25;
-
-        //         double new_values = centre.first+right.first+left.first +upper.first + down.first + upperleft.first + upperright.first+ downleft.first+ downright.first;
-
-        //         double new_rhs    = centre.second+ right.second+left.second +upper.second + down.second + upperleft.second + upperright.second+ downleft.second+ downright.second;
+                Grid* gridbelow = get_grid(level);
 
 
 
-
-        //         gridbelow.set_approx(new_values, i);
-        //         //gridbelow.set_rhs(new_rhs, i);
-
-        //         }
+                // Prolonge residual and correct the fine-grid approximation
+            }
 
 
-        //     }
-
-
-        //     return gridbelow;
-        // }
 
 };
 
@@ -537,33 +396,33 @@ class MG_solver{
 
         // Internal methods
 
-        void _Gauss_Seidel(Grid& grid){
+        void _Gauss_Seidel(Grid * grid){  
 
-            unsigned int xdim{grid.get_size()};
+            unsigned int xdim{grid->get_size()};
 
-            double h{grid.get_h};
+            double h{grid->get_h};
 
             for (int i = 0; i< xdim; i++){
 
                 for (int j = 0; j<xdim; j++){
 
-                    unsigned int index = grid.vector_index(i,j);
+                    unsigned int index = grid->vector_index(i,j);
 
-                    if (grid.boundary(index) == false){
+                    if (grid->boundary(index) == false){
 
-                        unsigned int index_up = grid.vector_index(i,j+1);
+                        unsigned int index_up = grid->vector_index(i,j+1);
 
-                        unsigned int index_down = grid.vector_index(i,j-1);
+                        unsigned int index_down = grid->vector_index(i,j-1);
 
-                        unsigned int index_right = grid.vector_index(i+1,j);
+                        unsigned int index_right = grid->vector_index(i+1,j);
 
-                        unsigned int index_left = grid.vector_index(i-1, j);
+                        unsigned int index_left = grid->vector_index(i-1, j);
 
-                        double new_approx{(grid.get_approx(index_up)+grid.get_approx(index_down)+grid.get_approx(index_left)\
-                                         +grid.get_approx(index_right)+h*h*grid.get_rhs(index))/int{4}};
+                        double new_approx{(grid->get_approx(index_up)+grid->get_approx(index_down)+grid->get_approx(index_left)\
+                                         +grid->get_approx(index_right)+h*h*grid->get_rhs(index))/int{4}};
 
-
-                        grid.set_approx(new_approx, index);
+                        // store a copy of solution
+                        grid->set_approx(new_approx, index);
 
 
                     }
@@ -577,34 +436,37 @@ class MG_solver{
         }// End of _Gauss_Seidel
 
 
-        void _calculate_res(Grid& grid){
+        void _calculate_res( Grid * grid){
 
-            unsigned int xdim{grid.get_size()};
+            unsigned int xdim{grid->get_size()};
 
-            double h{grid.get_h};
+            double h{grid->get_h};
 
             for (int i = 0; i< xdim; i++){
 
                 for (int j = 0; j<xdim; j++){
 
-                    unsigned int index = grid.vector_index(i,j);
+                    unsigned int index = grid->vector_index(i,j);
 
-                    if (grid.boundary(index) == false){
+                    if (grid->boundary(index) == false){
 
 
-                        unsigned int index_up = grid.vector_index(i,j+1);
+                        unsigned int index_up = grid->vector_index(i,j+1);
 
-                        unsigned int index_down = grid.vector_index(i,j-1);
+                        unsigned int index_down = grid->vector_index(i,j-1);
 
-                        unsigned int index_right = grid.vector_index(i+1,j);
+                        unsigned int index_right = grid->vector_index(i+1,j);
 
-                        unsigned int index_left = grid.vector_index(i-1, j);
+                        unsigned int index_left = grid->vector_index(i-1, j);
 
-                        double new_res{grid.get_rhs(index) + (grid.get_approx(index_down) +grid.get_approx(index_up)\
-                                      +grid.get_approx(index_left) + grid.get_approx(index_right) - 4*grid.get_approx(index))\
+                        double new_res{grid->get_rhs(index) + (grid->get_approx(index_down) +grid->get_approx(index_up)\
+                                      +grid->get_approx(index_left) + grid->get_approx(index_right) - 4*grid->get_approx(index))\
                                       /double(h*h)};
 
-                        grid.set_res(new_res, index);
+                        grid->set_res(new_res, index);
+
+                        // store a copy of solution
+
 
                        }
 
@@ -613,9 +475,26 @@ class MG_solver{
 
         }
 
-        void _solve_current_grid(unsigned int level){
+        void _solve_current_grid(const unsigned int level){
 
-            _solutions.get_grid(level);
+            unsigned int sweeps;
+
+            Grid* grid_level = _solutions.get_grid(level); // Get the grid at current level
+
+            if (level == 0){
+
+                sweeps = _sweeps_finest;
+            }
+
+            else{
+                sweeps = _sweeps_coarse;
+            }
+
+            for (int i = 0; i <sweeps; i++){
+
+            _Gauss_Seidel(grid_level);// apply Gauss Seidel smoother on this level 
+
+            }
 
 
 
@@ -629,22 +508,38 @@ class MG_solver{
 
         void _recursive_go_down(unsigned int level){
 
+            // check if we are already at bottom 
+
+            if (level >= _Nlevel){
+                return; 
+            } 
+
             //calculate new residual on grid below
 
-             _solutions.restriction(level, _solutions.get_grid(level+1)); // restriction on residual
+             _solutions.restriction(level); // restriction on residual
 
-            _solve_current_grid(level+1)
+            _solve_current_grid(level+1);
+
+            _recursive_go_down(level+1);
 
             
+        }// End of _recursive_go_down
 
 
+        void _recursive_go_up(unsigned int level){
 
+            _solutions.interpolation(level); // prolongation on solution
 
+            _solve_current_grid(level - 1);
 
+            _recursive_go_down(level -1);
 
-
-
+             
+            
         }
+
+
+
 
 
 

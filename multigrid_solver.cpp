@@ -614,18 +614,3 @@ template class MultiGridSolver<3,float>;
 template class MultiGridSolver<2,float>;
 template class MultiGridSolver<1,float>;
 template class MultiGridSolver<1,std::complex<double> >;
-
-    © 2020 GitHub, Inc.
-    Terms
-    Privacy
-    Security
-    Status
-    Help
-
-    Contact GitHub
-    Pricing
-    API
-    Training
-    Blog
-    About
-
