@@ -37,7 +37,7 @@ class Grid{
 
 
         void print_nodes() //  
-        {   
+        {   std::cout<< "print_nodes "<<'\n';
             //ref.values
             // print the component of values
             std::vector<std::pair<double, double>> &ref2{values};//refence to the variable nodes, can use auto?
@@ -141,7 +141,7 @@ class Grid{
 
         unsigned int get_size() const {
 
-        //std::cout<<_N<< " size"<<"\n";
+        std::cout<<_N<< " size"<<"\n";
 
         return _N;
         }
@@ -242,10 +242,13 @@ class MG{
         {
             Nlevel = l;
             ptrgrids = new Grid*[l]; //array of ptrs
-
-            for (unsigned int i =0; i<l; i++){
+            unsigned int count = 0;
+            for ( int i =l-1; i>-1; --i){
+                std::cout<<"l"<< l<< '\n';
+                std::cout<< "i"<<i<< '\n';
                 unsigned int number = pow(2, i+1)+1; 
-                ptrgrids[i] = new Grid{number}; // dynamically allocated grid size to memory
+                ptrgrids[count] = new Grid{number}; // dynamically allocated grid size to memory
+                ++count;
             }
         }
 
@@ -338,7 +341,7 @@ class MG{
 
 
                     double residual_below = gridabove->get_res(index)+ 0.5*(gridabove->get_res(right_above)+gridabove->get_res(left_above)\
-                            +gridabove->get_res(upper_above) +gridabove->get_res(down_above)+)+0.25*(gridabove->get_res(upperleft_above)\
+                            +gridabove->get_res(upper_above) +gridabove->get_res(down_above))+0.25*(gridabove->get_res(upperleft_above)\
                             +gridabove->get_res(upperright_above)+gridabove->get_res(downleft_above)+gridabove->get_res(downright_above));
 
 
@@ -346,7 +349,7 @@ class MG{
                     }
 
                     else{
-                        std::cout<<' Out of bound'<<'\n';
+                        std::cout<<"Out of bound"<<'\n';
                     }
 
 
@@ -476,6 +479,10 @@ class MG_solver{
         unsigned int _Nlevel; // #levels 
 
         unsigned int _Nmin; // size per dim on coarsest // redundent info 
+
+
+        double _h{1.0/(_N -1)};
+
 
 
         // Data needed
@@ -688,7 +695,24 @@ class MG_solver{
         }
 
 
-        void _check_convergence(){
+        bool _check_convergence(){
+
+            double err = _res_ini != 0.0 ? _res/_res_ini : 1.0;
+
+            bool converged = false;
+
+            // if (_res <_stopping_criterion){
+
+            // converged = true;}
+
+            if (_current_Vcycle >= _max_Vcycle ){
+
+                converged = true;
+            }
+
+            return converged;
+
+
 
 
         }
@@ -701,9 +725,22 @@ class MG_solver{
 
 
 
+
         public:
 
+
+        
+
+        // member initialiser list for Constructors
+        MG_solver(unsigned int n):_N {n},_totN{n*n},_Nlevel{(unsigned int) log2(n-1)}, _solutions{_Nlevel}{}
+
+        
+
+
+
         void solve(){
+
+            std::cout<<"solve rountine"<<'\n';
 
              _current_Vcycle = 0;
 
@@ -728,6 +765,12 @@ class MG_solver{
 
              if (_check_convergence()) break;}
 
+             Grid* _finest = _solutions.get_grid(0);
+
+             _finest->print_nodes();
+
+
+            
 
 
              
@@ -735,6 +778,45 @@ class MG_solver{
 
 
         }
+
+
+            void _make_source(){
+
+            // Get the rhs from finest grid in _solution
+
+            Grid* _finest = _solutions.get_grid(0);
+
+            _finest->get_size();
+
+            for (int i= 0; i<_N;i++){
+
+                for (int j=0; j<_N; j++){
+
+                    double source = exp(i*_h)*exp(j*_h);
+
+                    unsigned int index = _finest->vector_index(i,j);
+
+                    _finest->set_rhs(source, index);
+
+                   
+
+
+                }
+
+
+            }
+
+            //_finest->print_nodes();
+
+
+
+        }
+
+
+
+
+
+
 
 
 
@@ -754,50 +836,61 @@ class MG_solver{
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
 int main(){
-    //Grid grid{5};
-    //grid.get_size();
-    //auto values = grid.get_values();
-    //grid.print_values(values);
-    //grid.grid_index(9);
-    //grid.vector_index(1,4);
-    //nodes = grid.values;
-    //grid.print_nodes();
-    //std::cout<<"Now assign values to node"<<'\n';
-    // Assign 2.0 to the first node
-    //double v11 = 2.0;
-    //grid.set_approx(v11 , 0);
-    //grid.print_nodes();
-    MG Vcycle{3};
 
-    std::cout<<"Print the 3*3 grid"<<"\n";
 
-    Vcycle.print_grid(0);
+    MG_solver Laplacian(5);
+    Laplacian._make_source();
+    Laplacian.solve();
+    
 
-    Grid* grid2 = Vcycle.get_grid(2);
+}
 
-    std::cout<<"The size of grid"<<"\n";
 
-    grid2->get_size();
 
-    //Vcycle.restriction(*grid2);
 
-    Grid gridbelow{Vcycle.restriction(*grid2)}; 
 
-    gridbelow.print_nodes();
+
+
+
+
+
+
+
+
+// int main(){
+//     //Grid grid{5};
+//     //grid.get_size();
+//     //auto values = grid.get_values();
+//     //grid.print_values(values);
+//     //grid.grid_index(9);
+//     //grid.vector_index(1,4);
+//     //nodes = grid.values;
+//     //grid.print_nodes();
+//     //std::cout<<"Now assign values to node"<<'\n';
+//     // Assign 2.0 to the first node
+//     //double v11 = 2.0;
+//     //grid.set_approx(v11 , 0);
+//     //grid.print_nodes();
+//     MG Vcycle{3};
+
+//     std::cout<<"Print the 3*3 grid"<<"\n";
+
+//     Vcycle.print_grid(0);
+
+//     Grid* grid2 = Vcycle.get_grid(2);
+
+//     std::cout<<"The size of grid"<<"\n";
+
+//     grid2->get_size();
+
+//     //Vcycle.restriction(*grid2);
+
+//     Grid gridbelow{Vcycle.restriction(*grid2)}; 
+
+//     gridbelow.print_nodes();
 
     
-    //Vcycle.get_values(2);
-    return 0;
-}
+//     //Vcycle.get_values(2);
+//     return 0;
+// }
