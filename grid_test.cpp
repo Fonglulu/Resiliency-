@@ -42,8 +42,37 @@ class Grid{
             // print the component of values
             std::vector<std::pair<double, double>> &ref2{values};//refence to the variable nodes, can use auto?
             for (int i{0}; i<ref2.size(); i++){
-                 std::cout <<ref2[i].first << ',' << ref2[i].second <<'\n';
+                 std::cout <<ref2[i].first << "  " << ref2[i].second <<'\n';
                  }
+        }
+
+        void print_int()
+        {
+
+            std::vector<std::pair<double, double>> &ref2{values};
+
+            for (int i{0}; i<ref2.size(); i++){
+
+                if (boundary(i) == false){
+                    
+                    std::cout<<ref2[i].first<< "  "<< ref2[i].second<<'\n';
+                    
+                }
+            }
+
+
+        }
+
+        void print_res()
+
+        {
+             std::vector<double>  & _ref_res{residual};
+
+             for (int i = 0; i< _ref_res.size(); i++){
+
+                 std:: cout<<_ref_res[i]<<'\n';
+             }
+
         }
 
         // Convert vector index to grid index
@@ -312,8 +341,13 @@ class MG{
 
                     unsigned int index = gridabove->vector_index(i,j);
 
+                
+
                     // Boundary check
-                    if (gridbelow->boundary(index) == false){
+
+                    std::cout<< gridbelow->get_size()<<"gridbelowsize"<<'\n';
+                    
+                    if (gridabove->boundary(index) == false){   //If it's not a boundary point on the finer grid.
 
                     // Find the (2x-1, 2y) node index in upper grid
                     int right_above = gridabove->vector_index(2* i-1, 2* j);
@@ -367,17 +401,22 @@ class MG{
                 // Prolonge residual and correct the fine-grid approximation
 
                 // Fetch the current grid, a coarse grid 
+              
                 Grid* gridbelow = get_grid(level);
-                
+               std::cout<<"get gridbelow"<<" "<<level<<'\n';
                 // Get the size of the corase grid
                 unsigned int size_below{gridbelow->get_size()};
 
                 // Fetch the above fine grid
-                Grid* gridabove = get_grid(level+1);
-                
-                // Get the size of the fine grid
-                unsigned int size_above{gridabove -> get_size()};
+                Grid* gridabove = get_grid(level-1);
 
+                std::cout<<"get gridabove"<<'\n';
+                std::cout<<  level+1<< '\n';
+                gridabove -> get_size();
+                std::cout<< "interpolate"<<'\n';
+                // Get the size of the fine grid
+                unsigned int size_above = gridabove -> get_size();
+                std::cout<< "interpolate"<<'\n';
                 for (int i = 0; i< size_below; i++){
 
                         for (int j = 0; j<size_below; j++){
@@ -517,32 +556,45 @@ class MG_solver{
         // Internal methods
 
         void _Gauss_Seidel(Grid * grid){  
-
+            // Get the size of current grid
             unsigned int xdim{grid->get_size()};
 
             double h ;
             h =  grid->get_h();
 
-            for (int i = 0; i< xdim; i++){
+            // take a copy of grid
 
-                for (int j = 0; j<xdim; j++){
+            Grid * _copy_grid = grid;
 
+            std::cout<<*(&grid)<< *(&_copy_grid)<<"copy"<<'\n';
+
+            
+            // Loop through each node on board
+            for (int i = 1; i< xdim-1; i++){
+
+                for (int j = 1; j<xdim-1; j++){
+                    
                     unsigned int index = grid->vector_index(i,j);
-
+                    // For interior grid
                     if (grid->boundary(index) == false){
 
-                        unsigned int index_up = grid->vector_index(i,j+1);
+                        unsigned int index_up = grid->vector_index(i+1,j);
+                        std::cout<<index<<" "<< index_up << " " <<grid->get_rhs(index_up)<< "node above"<< '\n';
 
-                        unsigned int index_down = grid->vector_index(i,j-1);
+                        unsigned int index_down = grid->vector_index(i-1,j);
 
-                        unsigned int index_right = grid->vector_index(i+1,j);
+                        unsigned int index_right = grid->vector_index(i,j+1);
 
-                        unsigned int index_left = grid->vector_index(i-1, j);
+                        unsigned int index_left = grid->vector_index(i, j-1);
 
-                        double new_approx{(grid->get_approx(index_up)+grid->get_approx(index_down)+grid->get_approx(index_left)\
-                                         +grid->get_approx(index_right)+h*h*grid->get_rhs(index))/int{4}};
+                        std::cout<< "rhs "<< grid->get_rhs(index)<<'\n';
+
+                        double new_approx = (_copy_grid->get_approx(index_up)+_copy_grid->get_approx(index_down)+_copy_grid->get_approx(index_left)\
+                                         + _copy_grid->get_approx(index_right)+h*h*_copy_grid->get_rhs(index))/4 ;
 
                         // store a copy of solution
+
+                        std::cout<< new_approx<< " new approx"<<'\n';
                         grid->set_approx(new_approx, index);
 
 
@@ -586,7 +638,9 @@ class MG_solver{
                                       +grid->get_approx(index_left) + grid->get_approx(index_right) - 4*grid->get_approx(index))\
                                       /double(h*h)};
 
+
                         grid->set_res(new_res, index);
+                        std::cout<< new_res<< " res"<< '\n';
 
                         // store a copy of solution
 
@@ -616,6 +670,10 @@ class MG_solver{
             for (int i = 0; i <sweeps; i++){
 
             _Gauss_Seidel(grid_level);// apply Gauss Seidel smoother on this level 
+
+            grid_level->print_int();
+
+
 
             }
         } // End of _solve_current_grid
@@ -655,7 +713,7 @@ class MG_solver{
 
             // check if we are already at bottom 
 
-            if (level >= _Nlevel){
+            if (level >= _Nlevel-1){
                 return; 
             } 
 
@@ -665,9 +723,7 @@ class MG_solver{
 
             _solve_current_grid(level+1);
 
-            _calculate_new_res(level+1);
-
-            
+            _calculate_new_res(level+1);         
 
             _recursive_go_down(level+1);
 
@@ -677,22 +733,26 @@ class MG_solver{
 
         void _recursive_go_up(unsigned int level){
 
-            _solutions.interpolation(level); // prolongation on residual 
+            std::cout<<"starting going up"<<" level " << level<<'\n';
 
+
+            _solutions.interpolation(level); // prolongation on residual 
+        
             // Add residual on cuurent level to the solution current level
 
             _correction(level-1);
-
-
-
-
+            std::cout<<"Back to finest "<< level -1<<'\n';
             _solve_current_grid(level - 1);
 
-            _recursive_go_down(level -1);
 
-             
-            
-        }
+            if (level  >1){
+
+                std::cout<<"level "<< level<<'\n';
+                _recursive_go_up(level -1);
+            } 
+            else{
+                return;}
+            }
 
 
         bool _check_convergence(){
@@ -746,28 +806,37 @@ class MG_solver{
 
 
 
-             _solve_current_grid(0);\
+             _solve_current_grid(0);
 
+             _calculate_new_res(0);
 
+            std::cout<< "Finised solving on finest grid"<<'\n';
              if (_check_convergence()) return; 
 
-             while(1) {
+             while(true) {
             
             // Goes down from the finest grid [0] to the coarest
              _recursive_go_down(0);
 
              _solve_current_grid(_Nlevel-1);
+             std::cout<< "solve on the bottom level"<< " "<< _Nlevel-2<<'\n';
 
 
-            // Goes up from the coarest grid  _Nlevel-1 
+            // Goes up from the coarest grid  _Nlevel-2
+
              _recursive_go_up(_Nlevel-1);
+
+             _current_Vcycle++;
 
 
              if (_check_convergence()) break;}
 
              Grid* _finest = _solutions.get_grid(0);
 
+            std::cout<< " now prints the solutions"<< '\n';
              _finest->print_nodes();
+             _finest->print_res();
+
 
 
             
@@ -778,6 +847,29 @@ class MG_solver{
 
 
         }
+
+            void _set_boundary(){
+
+                Grid* _finest = _solutions.get_grid(0);
+
+                _finest->get_size();
+
+                for (int i = 0; i< _N; i++){
+
+                    for (int j = 0; j<_N; j++){
+
+                        unsigned int index = _finest->vector_index(i,j);
+
+                        if(_finest->boundary(index) == true){
+
+                            double _boundary = exp(i*_h)*exp(j*_h);
+                            _finest ->set_approx(_boundary, index);
+
+                        }
+                    }
+                }
+
+            } // end of _set_boundary
 
 
             void _make_source(){
@@ -792,12 +884,13 @@ class MG_solver{
 
                 for (int j=0; j<_N; j++){
 
-                    double source = exp(i*_h)*exp(j*_h);
+                    double source = -2*exp(i*_h)*exp(j*_h);
 
                     unsigned int index = _finest->vector_index(i,j);
 
-                    _finest->set_rhs(source, index);
+                    _finest->set_rhs(source, index); 
 
+                   
                    
 
 
@@ -807,9 +900,6 @@ class MG_solver{
             }
 
             //_finest->print_nodes();
-
-
-
         }
 
 
@@ -841,6 +931,7 @@ int main(){
 
     MG_solver Laplacian(5);
     Laplacian._make_source();
+    Laplacian._set_boundary();
     Laplacian.solve();
     
 
