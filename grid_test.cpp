@@ -70,7 +70,7 @@ class Grid{
 
              for (int i = 0; i< _ref_res.size(); i++){
 
-                 std:: cout<<_ref_res[i]<<'\n';
+                 std:: cout<<_ref_res[i]<<" residual at "<< i<<'\n';
              }
 
         }
@@ -99,8 +99,6 @@ class Grid{
          unsigned int vector_index(const unsigned int ix, const unsigned int iy) const {
 
              unsigned int index {_N*ix+iy};
-
-             //std::cout<<index<<"index"<<'\n';
 
              return index;
          }
@@ -277,6 +275,7 @@ class MG{
                 std::cout<< "i"<<i<< '\n';
                 unsigned int number = pow(2, i+1)+1; 
                 ptrgrids[count] = new Grid{number}; // dynamically allocated grid size to memory
+                std::cout<<"count "<< count<<'\n';
                 ++count;
             }
         }
@@ -303,9 +302,14 @@ class MG{
 
              //double value1 = 2.0;
              //ptrgrids[i] ->set_approx(value1, 0);
-             ptrgrids[i] ->print_nodes();
+             //ptrgrids[i] ->print_nodes();
 
              //return ptrgrids[i]->get_node(i);
+         }
+
+         void print_level_number(){
+
+             std::cout<<"levels of Vcycle " <<Nlevel<<'\n'; 
          }
 
         // Get ith grid from the Grid pointer array
@@ -345,7 +349,7 @@ class MG{
 
                     // Boundary check
 
-                    std::cout<< gridbelow->get_size()<<"gridbelowsize"<<'\n';
+                    std::cout<< gridbelow->get_size()<<" gridbelowsize"<<'\n';
                     
                     if (gridabove->boundary(index) == false){   //If it's not a boundary point on the finer grid.
 
@@ -378,6 +382,7 @@ class MG{
                             +gridabove->get_res(upper_above) +gridabove->get_res(down_above))+0.25*(gridabove->get_res(upperleft_above)\
                             +gridabove->get_res(upperright_above)+gridabove->get_res(downleft_above)+gridabove->get_res(downright_above));
 
+                    std::cout<<residual_below << " Residual"<< '\n';
 
                     gridbelow->set_rhs(residual_below, gridbelow->vector_index(i,j));
                     }
@@ -410,10 +415,10 @@ class MG{
                 // Fetch the above fine grid
                 Grid* gridabove = get_grid(level-1);
 
-                std::cout<<"get gridabove"<<'\n';
-                std::cout<<  level+1<< '\n';
+                std::cout<<"get gridabove"<< " "<< level-1<<'\n';
+
                 gridabove -> get_size();
-                std::cout<< "interpolate"<<'\n';
+            
                 // Get the size of the fine grid
                 unsigned int size_above = gridabove -> get_size();
                 std::cout<< "interpolate"<<'\n';
@@ -422,22 +427,18 @@ class MG{
                         for (int j = 0; j<size_below; j++){
 
                             unsigned int index = gridabove->vector_index(i,j);
-
-
-
-
                             
                             double error_above = gridbelow->get_res(index);
 
-
                             gridabove->set_res(error_above, gridabove->vector_index(2*i,2*j));
+                            std::cout<< "Residual on interpolation "<< error_above<<" at "<< gridabove->vector_index(2*i,2*j)<< '\n';
                     }
 
                 }
                 
                 for (int i=0; i<size_above; i+=2){
 
-                    for (int j = 1; i<size_above-1; i+=2){
+                    for (int j = 1; j<size_above-1; j+=2){
 
                             // for k in range(depth):
                             //     for i in range(0, ynodes, 2):
@@ -446,53 +447,64 @@ class MG{
 
                             unsigned int index = gridabove->vector_index(i,j);
 
-                            unsigned int index_below = gridabove->vector_index(i, j-1);
+                            unsigned int index_left = gridabove->vector_index(i, j-1);
 
-                            unsigned int index_above = gridabove-> vector_index(i,j+1);
+                            unsigned int index_right = gridabove-> vector_index(i,j+1);
 
-                            double error_above = 0.5* (gridabove->get_res(index_above)+ gridabove ->get_res(index_below));
+                            double error_above = 0.5* (gridabove->get_res(index_left)+ gridabove ->get_res(index_right));
 
                             gridabove ->set_res(error_above, index);
+                            std::cout<< "Residual on interpolation "<< error_above<<" at " << index<< '\n';
                     }
                 }
 
                 for (int i =1; i<size_above-1; i+=2){
                     
-                   for (int j = 0; i<size_above; i+=2){
+                   for (int j = 0; j<size_above; j+=2){
 
                         unsigned int index = gridabove-> vector_index(i,j);
 
-                        unsigned int index_left = gridabove ->vector_index(i-1, j);
+                        unsigned int index_down = gridabove ->vector_index(i-1, j);
 
-                        unsigned int index_right = gridabove -> vector_index(i+1, j);
+                        unsigned int index_above = gridabove -> vector_index(i+1, j);
 
-                        double error_above = 0.5* (gridabove->get_res(index_left) + gridabove -> get_res(index_right));
+                        double error_above = 0.5* (gridabove->get_res(index_above) + gridabove -> get_res(index_down));
 
                         gridabove ->set_res(error_above, index);
+                        std::cout<< "Residual on interpolation "<< error_above<<" at "<< index<< '\n';
 
                     }
                 }
 
                 for (int i =1; i< size_above -1; i+=2){
-                    
-                    for (int j= 1; i<size_above -1; i+=2){
+
+                    std::cout<<"odd i "<< i <<" "<< size_above -1<<'\n';
+                
+                    for (int j= 1; j<size_above -1; j+=2){
+
+                            std::cout<<"odd j "<< j <<" "<< size_above -1<<'\n';
 
                             unsigned int index = gridabove->vector_index(i,j);
 
-                            unsigned int index_below = gridabove->vector_index(i, j-1);
+                            unsigned int index_below = gridabove->vector_index(i-1, j);
 
-                            unsigned int index_above = gridabove-> vector_index(i,j+1);
+                            unsigned int index_above = gridabove-> vector_index(i+1,j);
 
-                            unsigned int index_left = gridabove ->vector_index(i-1, j);
+                            unsigned int index_left = gridabove ->vector_index(i, j-1);
 
-                            unsigned int index_right = gridabove -> vector_index(i+1, j);
+                            unsigned int index_right = gridabove -> vector_index(i, j+1);
 
-                            double error_above = 0.25*( gridabove ->get_res(index_below) +gridabove->get_res(index_above)/
-                                                          +gridabove ->get_res(index_left) + gridabove->get_res(index_right));
+                            double error_above = 0.25*( gridabove ->get_res(index_below) +gridabove->get_res(index_above)\
+                                                          + gridabove ->get_res(index_left) + gridabove->get_res(index_right));
                             gridabove ->set_res(error_above, index);
+                            std::cout<< gridabove ->get_res(index_below)<< " "<< gridabove->get_res(index_above) << " "<<  index_right<< " "<<gridabove->get_res(index_right)<<'\n';
+                            std::cout<< "Residual on interpolation odd order "<< error_above<<gridabove ->get_res(index_right)<< " "<<index<<'\n';
+
                     }
                 }
 
+
+                
 
             }
 
@@ -544,9 +556,9 @@ class MG_solver{
 
         unsigned int _sweeps_coarse{2};
 
-        unsigned int _sweeps_finest{2};
+        unsigned int _sweeps_finest{5};
 
-        unsigned int _max_Vcycle{10};
+        unsigned int _max_Vcycle{1};
 
         //Book-keeping variables
 
@@ -566,7 +578,7 @@ class MG_solver{
 
             Grid * _copy_grid = grid;
 
-            std::cout<<*(&grid)<< *(&_copy_grid)<<"copy"<<'\n';
+            //std::cout<<*(&grid)<< *(&_copy_grid)<<"copy"<<'\n';
 
             
             // Loop through each node on board
@@ -579,7 +591,7 @@ class MG_solver{
                     if (grid->boundary(index) == false){
 
                         unsigned int index_up = grid->vector_index(i+1,j);
-                        std::cout<<index<<" "<< index_up << " " <<grid->get_rhs(index_up)<< "node above"<< '\n';
+                        //std::cout<<index<<" "<< index_up << " " <<grid->get_rhs(index_up)<< "node above"<< '\n';
 
                         unsigned int index_down = grid->vector_index(i-1,j);
 
@@ -587,14 +599,14 @@ class MG_solver{
 
                         unsigned int index_left = grid->vector_index(i, j-1);
 
-                        std::cout<< "rhs "<< grid->get_rhs(index)<<'\n';
+                        //std::cout<< "rhs "<< grid->get_rhs(index)<<'\n';
 
                         double new_approx = (_copy_grid->get_approx(index_up)+_copy_grid->get_approx(index_down)+_copy_grid->get_approx(index_left)\
                                          + _copy_grid->get_approx(index_right)+h*h*_copy_grid->get_rhs(index))/4 ;
 
                         // store a copy of solution
 
-                        std::cout<< new_approx<< " new approx"<<'\n';
+                        //std::cout<< new_approx<< " new approx"<<'\n';
                         grid->set_approx(new_approx, index);
 
 
@@ -615,7 +627,8 @@ class MG_solver{
 
             unsigned int xdim{grid->get_size()};
 
-            double h{grid->get_h()};
+            double h = grid->get_h();
+            std::cout<< h << " h "<< '\n';
 
             for (int i = 0; i< xdim; i++){
 
@@ -623,6 +636,9 @@ class MG_solver{
 
                     unsigned int index = grid->vector_index(i,j);
 
+                    std::cout<< index<< " index "<< '\n';
+
+        
                     if (grid->boundary(index) == false){
 
 
@@ -634,21 +650,19 @@ class MG_solver{
 
                         unsigned int index_left = grid->vector_index(i-1, j);
 
-                        double new_res{grid->get_rhs(index) + (grid->get_approx(index_down) +grid->get_approx(index_up)\
-                                      +grid->get_approx(index_left) + grid->get_approx(index_right) - 4*grid->get_approx(index))\
-                                      /double(h*h)};
+                        double new_res = grid->get_rhs(index) + (grid->get_approx(index_down) +grid->get_approx(index_up)\
+                                      +grid->get_approx(index_left) + grid->get_approx(index_right) - 4*grid->get_approx(index))/double(h*h);
 
 
                         grid->set_res(new_res, index);
-                        std::cout<< new_res<< " res"<< '\n';
-
-                        // store a copy of solution
-
-
+                        std::cout<< new_res<< " res "<<index<< '\n';
+                
                        }
 
                 }
             }
+
+            grid->print_res();
 
         }
 
@@ -657,6 +671,8 @@ class MG_solver{
             unsigned int sweeps;
 
             Grid* grid_level = _solutions.get_grid(level); // Get the grid at current level
+
+            _solutions.print_level_number();
 
             if (level == 0){
 
@@ -671,7 +687,7 @@ class MG_solver{
 
             _Gauss_Seidel(grid_level);// apply Gauss Seidel smoother on this level 
 
-            grid_level->print_int();
+            //grid_level->print_int();
 
 
 
@@ -772,31 +788,14 @@ class MG_solver{
 
             return converged;
 
-
-
-
         }
-
-
-
-
-
-
-
 
 
 
         public:
 
-
-        
-
         // member initialiser list for Constructors
         MG_solver(unsigned int n):_N {n},_totN{n*n},_Nlevel{(unsigned int) log2(n-1)}, _solutions{_Nlevel}{}
-
-        
-
-
 
         void solve(){
 
@@ -816,10 +815,16 @@ class MG_solver{
              while(true) {
             
             // Goes down from the finest grid [0] to the coarest
+
+            std::cout<< "V_cycle "<< _current_Vcycle<< '\n';
              _recursive_go_down(0);
 
+            //Solve on the bottom grid
+              std::cout<< "solve on the bottom level"<< " "<< _Nlevel-1<<'\n';
              _solve_current_grid(_Nlevel-1);
-             std::cout<< "solve on the bottom level"<< " "<< _Nlevel-2<<'\n';
+             _calculate_new_res(_Nlevel-1);
+
+           
 
 
             // Goes up from the coarest grid  _Nlevel-2
@@ -827,6 +832,8 @@ class MG_solver{
              _recursive_go_up(_Nlevel-1);
 
              _current_Vcycle++;
+
+
 
 
              if (_check_convergence()) break;}
