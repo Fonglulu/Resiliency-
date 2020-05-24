@@ -482,7 +482,6 @@ class MG{
                 
                     for (int j= 1; j<size_above -1; j+=2){
 
-                            std::cout<<"odd j "<< j <<" "<< size_above -1<<'\n';
 
                             unsigned int index = gridabove->vector_index(i,j);
 
