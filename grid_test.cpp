@@ -46,6 +46,8 @@ class Grid{
                  }
         }
 
+        
+
         void print_int()
         {
 
@@ -251,6 +253,34 @@ class Grid{
             }
             
         }
+
+        double l2_res() {
+
+
+
+            //int size = vector.size();
+
+  
+
+            double sum = 0;
+
+            for(int i = 0; i<_Ntot; i++){
+
+
+                sum += pow(residual[i],2);
+            }
+
+           
+            return sqrt(sum);
+
+            }
+
+
+        
+
+        
+
+ 
 
 
     
@@ -509,8 +539,7 @@ class MG{
                             double error_above = 0.25*( gridabove ->get_res(index_below) +gridabove->get_res(index_above)\
                                                           + gridabove ->get_res(index_left) + gridabove->get_res(index_right));
                             gridabove ->set_res(error_above, index);
-                            //std::cout<< gridabove ->get_res(index_below)<< " "<< gridabove->get_res(index_above) << " "<<  index_right<< " "<<gridabove->get_res(index_right)<<'\n';
-                            //std::cout<< "Residual on interpolation odd order "<< error_above<<gridabove ->get_res(index_right)<< " "<<index<<'\n';
+
 
                     }
                 }
@@ -570,7 +599,7 @@ class MG_solver{
 
         unsigned int _sweeps_finest{2};
 
-        unsigned int _max_Vcycle{2};
+        unsigned int _max_Vcycle{10};
 
         //Book-keeping variables
 
@@ -578,6 +607,57 @@ class MG_solver{
         unsigned int _current_Vcycle;
 
         // Internal methods
+
+        Grid _Fault_simluate(Grid * grid, int fault_size){
+
+            unsigned int xdim{grid->get_size()};
+
+            unsigned int middle{(xdim+1)/2-1};
+
+            Grid subgrid(fault_size*2);
+
+
+            for (int i = middle-fault_size; i < middle+fault_size ; i++){
+                for (int j = middle-fault_size; j< middle+fault_size; j++){
+
+                    unsigned int index  = grid -> vector_index(i,j);
+
+                    double zero;
+
+                    zero = 0.0;
+
+                    grid-> set_approx(zero, index) ;
+                    if (i == middle-fault_size || i == middle+fault_size || j == middle - fault_size || j == middle +fault_size){
+                        
+                        double fault_bnd;
+
+                        fault_bnd = grid->get_approx(grid->vector_index(i,j));
+
+
+                        int bnd_index{subgrid.vector_index(i-(middle-fault_size), j-(middle-fault_size))}; 
+
+                        subgrid.set_rhs(fault_bnd,bnd_index);
+
+                   
+
+                }
+            }
+
+        }
+
+        return subgrid ;
+        }
+
+        // void _Fault_recovery(Grid *grid, int fault_size){
+
+
+        //     Grid subgrid(fault_size);
+
+
+
+
+
+        // }
 
         void _Gauss_Seidel(Grid * grid){  
             // Get the size of current grid
@@ -640,7 +720,7 @@ class MG_solver{
             unsigned int xdim{grid->get_size()};
 
             double h = grid->get_h();
-            std::cout<< h << " h "<< '\n';
+            //std::cout<< h << " h "<< '\n';
 
             for (int i = 0; i< xdim; i++){
 
@@ -667,12 +747,7 @@ class MG_solver{
 
 
                         grid->set_res(new_res, index);
-                        //std::cout<< new_res<<" res "<<index<<'\n';
-                        //std::cout<< grid->get_rhs(index) <<" grid->get_rhs(index)"<<'\n';
-                        //std::cout<<(grid->get_approx(index_down) +grid->get_approx(index_up)\
-                                      +grid->get_approx(index_left) + grid->get_approx(index_right) - 4*grid->get_approx(index))/(h*h)<<'\n';
 
-                        //std::cout<< grid->get_approx(index)<< "grid->get_approx(index) "<<'\n';
                        }
 
                 }
@@ -688,8 +763,6 @@ class MG_solver{
 
             Grid* grid_level = _solutions.get_grid(level); // Get the grid at current level
 
-            //_solutions.print_level_number();
-            //grid_level ->print_nodes();
 
             if (level == 0){
 
@@ -706,7 +779,7 @@ class MG_solver{
 
             }
 
-            std::cout<< "interior points"<<'\n';
+            //std::cout<< "interior points"<<'\n';
             //grid_level->print_int();
 
         } // End of _solve_current_grid
@@ -758,16 +831,24 @@ class MG_solver{
 
              _solutions.restriction(level); // restriction on residual
 
-            std::cout<<" Check going down"<< '\n';
+  
+            //std::cout<<" Check going down"<< '\n';
             Grid* grid = _solutions.get_grid(level+1);
-            grid->print_int();
+            //grid->print_int();
             grid->reset();
+
+
+            if (level == _Nlevel-2)
+            {
+              std::cout<< " fault happens " << '\n';
+             _Fault_simluate(grid, 5);
+            }
 
             _solve_current_grid(level+1);
 
-            std::cout<<" going down solved"<< '\n';
+            //std::cout<<" going down solved"<< '\n';
             Grid* _post_grid = _solutions.get_grid(level+1);
-            _post_grid->print_int();
+            //_post_grid->print_int();
 
 
 
@@ -781,7 +862,7 @@ class MG_solver{
 
         void _recursive_go_up(unsigned int level){
 
-            std::cout<<"starting going up"<<" level " << level<<'\n';
+            //std::cout<<"starting going up"<<" level " << level<<'\n';
 
 
             _solutions.interpolation(level); // prolongation on residual 
@@ -856,17 +937,23 @@ class MG_solver{
 
             //  _calculate_new_res(0);
 
-            std::cout<< "Finised solving on finest grid"<<'\n';
+            //std::cout<< "Finised solving on finest grid"<<'\n';
              if (_check_convergence()) return; 
 
              while(true) {
 
 
-            std::cout<< "V_cycle "<< _current_Vcycle<< '\n';
+            //std::cout<< "V_cycle "<< _current_Vcycle<< '\n';
 
             Grid * _first = _solutions.get_grid(0);
-            _first->print_int();
+            //_first->print_int();
              _solve_current_grid(0);
+
+            // if (_current_Vcycle == 4)
+            // {
+            //   std::cout<< " fault happens " << '\n';
+            //  _Fault_simluate(_first, 5);
+            // }
 
              
 
@@ -878,13 +965,13 @@ class MG_solver{
 
 
             //Solve on the bottom grid
-              std::cout<< "solve on the bottom level"<< " "<< _Nlevel-1<<'\n';
+              //std::cout<< "solve on the bottom level"<< " "<< _Nlevel-1<<'\n';
 
              _solve_current_grid(_Nlevel-1);
 
              Grid* _coarest = _solutions.get_grid(_Nlevel -1);
 
-             _coarest->print_int();
+             //_coarest->print_int();
 
 
 
@@ -897,7 +984,16 @@ class MG_solver{
              _recursive_go_up(_Nlevel-1);
 
             Grid* _finest = _solutions.get_grid(0);
-            _finest->print_int();
+            //_finest->print_int();
+
+            _calculate_new_res(0);
+
+            double h_finest = _finest->get_h(); 
+
+            double residual = _finest->l2_res()*h_finest;
+
+            std::cout<<"l2 residual "<< residual<<'\n'; 
+
 
 
              _current_Vcycle++;
@@ -909,20 +1005,11 @@ class MG_solver{
 
              Grid* _finest = _solutions.get_grid(0);
 
-            std::cout<< " now prints the solutions"<< '\n';
-             _finest->print_int();
-             _calculate_new_res(0);
-             _finest->print_res();
+            //std::cout<< " now prints the solutions"<< '\n';
+             //_finest->print_nodes();
+             //_calculate_new_res(0);
+            // _finest->print_res();
           
-
-
-
-            
-
-
-             
-
-
 
         }
 
@@ -967,10 +1054,7 @@ class MG_solver{
                     unsigned int index = _finest->vector_index(i,j);
 
                     _finest->set_rhs(source, index); 
-
-                   
-                   
-
+                  
 
                 }
 
@@ -981,25 +1065,6 @@ class MG_solver{
         }
 
 
-
-
-
-
-
-
-
-
-
-        
-        
-        
-
-
-
-
-
-
-
         
 };
 
@@ -1007,10 +1072,14 @@ class MG_solver{
 int main(){
 
 
-    MG_solver Laplacian(9);
+    MG_solver Laplacian(513);
     Laplacian._make_source();
     Laplacian._set_boundary();
     Laplacian.solve();
+
+
+
+
     
 
 }
