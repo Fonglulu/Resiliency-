@@ -614,11 +614,14 @@ class MG_solver{
 
             unsigned int middle{(xdim+1)/2-1};
 
-            Grid subgrid(fault_size*2);
+            std::cout<< "middle " << middle<< '\n';
+
+            Grid subgrid(fault_size*2+1);
 
 
-            for (int i = middle-fault_size; i < middle+fault_size ; i++){
-                for (int j = middle-fault_size; j< middle+fault_size; j++){
+            for (int i = middle-fault_size; i <= middle+fault_size ; i++){
+                
+                for (int j = middle-fault_size; j<= middle+fault_size; j++){
 
                     unsigned int index  = grid -> vector_index(i,j);
 
@@ -626,38 +629,64 @@ class MG_solver{
 
                     zero = 0.0;
 
-                    grid-> set_approx(zero, index) ;
-                    if (i == middle-fault_size || i == middle+fault_size || j == middle - fault_size || j == middle +fault_size){
+                   
+                    if (i == middle-fault_size || i == middle+fault_size|| j == middle - fault_size || j == middle +fault_size){
                         
+
                         double fault_bnd;
 
                         fault_bnd = grid->get_approx(grid->vector_index(i,j));
 
+                        std::cout<< "i "<< i<< " " << "j " << j<< "fault_size " << fault_bnd <<'\n'; 
 
-                        int bnd_index{subgrid.vector_index(i-(middle-fault_size), j-(middle-fault_size))}; 
 
-                        subgrid.set_rhs(fault_bnd,bnd_index);
+                        unsigned int bnd_index{subgrid.vector_index(i-(middle-fault_size), j-(middle-fault_size))}; 
+
+                        subgrid.set_approx(fault_bnd,bnd_index);
 
                    
 
                 }
+
+                 grid-> set_approx(zero, index) ;
             }
 
         }
+        //subgrid.print_nodes();
 
         return subgrid ;
         }
 
-        // void _Fault_recovery(Grid *grid, int fault_size){
+        void _Fault_recovery(Grid *subgrid, Grid * grid, int fault_size, int recovery_sweep){
+
+            //subgrid->print_nodes();
+
+            for (int i=0 ; i<recovery_sweep; i++){
+            _Gauss_Seidel(subgrid);
+            }
+            subgrid->print_nodes();
 
 
-        //     Grid subgrid(fault_size);
+            unsigned int xdim{grid->get_size()};
+
+            unsigned int middle{(xdim+1)/2-1};
+
+            for (int i = middle-fault_size; i <= middle+fault_size ; i++){
+                
+                for (int j = middle-fault_size; j<= middle+fault_size; j++){
+
+                    double subgrid_approx =  subgrid->get_approx(subgrid->vector_index(i-(middle-fault_size), j-(middle-fault_size)));
+
+                    unsigned int fault_index = grid->vector_index(i,j);
+
+                    grid->set_approx(subgrid_approx, fault_index);
+
+                }
+
+            }
 
 
-
-
-
-        // }
+        }
 
         void _Gauss_Seidel(Grid * grid){  
             // Get the size of current grid
@@ -838,11 +867,11 @@ class MG_solver{
             grid->reset();
 
 
-            if (level == _Nlevel-2)
-            {
-              std::cout<< " fault happens " << '\n';
-             _Fault_simluate(grid, 5);
-            }
+            // if (level == _Nlevel-2)
+            // {
+            //   std::cout<< " fault happens " << '\n';
+            //  _Fault_simluate(grid, 5);
+            // }
 
             _solve_current_grid(level+1);
 
@@ -949,11 +978,14 @@ class MG_solver{
             //_first->print_int();
              _solve_current_grid(0);
 
-            // if (_current_Vcycle == 4)
-            // {
-            //   std::cout<< " fault happens " << '\n';
-            //  _Fault_simluate(_first, 5);
-            // }
+            if (_current_Vcycle == 4)
+            {
+              std::cout<< " fault happens " << '\n';
+             Grid faulty = _Fault_simluate(_first, 3);
+             _Fault_recovery(&faulty,_first, 3, 30);
+            }
+
+           
 
              
 
@@ -1072,7 +1104,7 @@ class MG_solver{
 int main(){
 
 
-    MG_solver Laplacian(513);
+    MG_solver Laplacian(17);
     Laplacian._make_source();
     Laplacian._set_boundary();
     Laplacian.solve();
